@@ -47,7 +47,8 @@ const map = new mapboxgl.Map({
   style:      'mapbox://styles/mapbox/dark-v11',
   center:     [-73.96, 40.71],
   zoom:       13,
-  pitch:      40,
+  pitch:      0,       // flat map
+  bearing:    0,
   maxBounds:  NYC_BOUNDS,
 });
 
@@ -77,20 +78,48 @@ function initGeolocation() {
 // ── DATA LOADING ─────────────────────────────────────────
 
 /**
- * Fetches one or more GeoJSON files and merges their features
- * into a single FeatureCollection.
+ * Fetches one or more GeoJSON files and merges their features.
+ * NOTE: This requires the app to be served via HTTP (not file://).
+ * Run: python3 -m http.server 8000   then open localhost:8000
  */
 async function fetchMergedGeoJSON(paths) {
   const responses = await Promise.all(
     paths.map(async (path) => {
       const res = await fetch(path);
-      if (!res.ok) throw new Error(`Failed to load: ${path}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} for ${path}`);
       return res.json();
     })
   );
   return {
     type: 'FeatureCollection',
     features: responses.flatMap((data) => data.features ?? []),
+  };
+}
+
+/**
+ * Returns a small set of sample points around Manhattan
+ * so layers are visually testable before real data is wired up.
+ */
+function makeDemoGeoJSON(id) {
+  const { color } = CATEGORIES[id];
+  // Scatter 12 points around central Manhattan
+  const base = [-73.9857, 40.7484];
+  const offsets = [
+    [0, 0], [0.01, 0.005], [-0.01, 0.007], [0.005, -0.01],
+    [-0.008, -0.005], [0.015, 0.012], [-0.015, 0.01],
+    [0.002, 0.018], [-0.002, -0.018], [0.02, -0.005],
+    [-0.02, 0.002], [0.012, -0.015],
+  ];
+  return {
+    type: 'FeatureCollection',
+    features: offsets.map(([dx, dy], i) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [base[0] + dx, base[1] + dy] },
+      properties: {
+        name:    `${CATEGORIES[id].label} Location ${i + 1}`,
+        address: 'Sample data — add your GeoJSON files to /data/',
+      },
+    })),
   };
 }
 
@@ -103,7 +132,13 @@ async function loadCategoryLayer(id) {
   setStatus(true);
 
   try {
-    const geojson = await fetchMergedGeoJSON(category.sources);
+    let geojson;
+    try {
+      geojson = await fetchMergedGeoJSON(category.sources);
+    } catch (fetchErr) {
+      console.warn(`[Guide] Could not load real data for "${id}" — using demo points. Serve via HTTP to load real GeoJSON.`, fetchErr);
+      geojson = makeDemoGeoJSON(id);
+    }
 
     map.addSource(id, { type: 'geojson', data: geojson });
 
