@@ -1,0 +1,325 @@
+/* ═══════════════════════════════════════════════════════
+   NYC HITCHHIKER'S GUIDE — STYLESHEET
+   Aesthetic: Worn paperback meets green-terminal futurism
+   ═══════════════════════════════════════════════════════ */
+
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --color-water:  #33CCFF;
+  --color-power:  #FFD700;
+  --color-relief: #FF6B35;
+  --color-rest:   #4CAF50;
+
+  --bg:           #070b0f;
+  --surface:      rgba(10, 16, 22, 0.92);
+  --border:       rgba(51, 204, 255, 0.15);
+  --text:         #c8dde8;
+  --text-dim:     #5a7a8a;
+  --green:        #39ff14;
+
+  --font-display: 'Special Elite', serif;
+  --font-mono:    'Share Tech Mono', monospace;
+  --radius-lg:    20px;
+  --radius-pill:  100px;
+  --shadow:       0 8px 40px rgba(0,0,0,0.7);
+}
+
+/* ── RESET & BASE ────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── MAP ─────────────────────────────────────────────────── */
+#map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ── HEADER ──────────────────────────────────────────────── */
+#app-header {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+}
+
+.header-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--green);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+
+#app-header h1 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: #fff;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  text-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+}
+
+/* ── STATUS BAR ──────────────────────────────────────────── */
+#status-bar {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+#status-bar .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.4; }
+  to   { opacity: 1; }
+}
+
+/* ── CATEGORY NAV ────────────────────────────────────────── */
+#category-nav {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 10px 14px;
+  box-shadow: var(--shadow), 0 0 0 1px rgba(57,255,20,0.04);
+
+  white-space: nowrap;
+}
+
+.cat-btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255,255,255,0.08);
+
+  background: transparent;
+  color: var(--text-dim);
+
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+              box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.cat-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.cat-btn:active { transform: scale(0.96); }
+
+/* Active state — color injected via JS custom property */
+.cat-btn.active {
+  background: color-mix(in srgb, var(--cat-color) 18%, transparent);
+  color: var(--cat-color);
+  border-color: color-mix(in srgb, var(--cat-color) 50%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--cat-color) 25%, transparent);
+}
+
+/* ── MODAL ───────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(4, 8, 12, 0.92);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay[hidden] { display: none; }
+
+.modal-content {
+  background: linear-gradient(160deg, #0d1b24 0%, #091219 100%);
+  border: 1px solid rgba(51, 204, 255, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: var(--shadow), 0 0 60px rgba(51,204,255,0.06);
+  text-align: center;
+}
+
+.modal-badge {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--green);
+  border: 1px solid rgba(57, 255, 20, 0.4);
+  border-radius: var(--radius-pill);
+  padding: 4px 14px;
+  margin-bottom: 18px;
+  text-shadow: 0 0 10px var(--green);
+}
+
+.modal-content h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: #fff;
+  margin-bottom: 12px;
+  letter-spacing: 0.3px;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+  font-style: italic;
+}
+
+.modal-features {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.feature-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+.modal-cta {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(57, 255, 20, 0.5);
+  background: rgba(57, 255, 20, 0.08);
+  color: var(--green);
+  text-shadow: 0 0 8px var(--green);
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.1);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-cta:hover {
+  background: rgba(57, 255, 20, 0.15);
+  box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
+}
+
+/* ── MAPBOX POPUP ────────────────────────────────────────── */
+.mapboxgl-popup-content {
+  background: rgba(10, 18, 26, 0.97) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  padding: 18px !important;
+  color: var(--text) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6) !important;
+  font-family: var(--font-mono);
+  min-width: 200px;
+}
+
+.mapboxgl-popup-tip { display: none; }
+
+.popup-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 10px;
+}
+
+.popup-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: #fff;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.popup-address {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ── MAPBOX UI OVERRIDES ─────────────────────────────────── */
+.mapboxgl-ctrl-bottom-right { bottom: 100px !important; }
+.mapboxgl-ctrl-group {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+}
+.mapboxgl-ctrl-group button { filter: invert(1) opacity(0.5); }
+.mapboxgl-ctrl-group button:hover { filter: invert(1) opacity(0.9); }
+
+/* ── MOBILE ──────────────────────────────────────────────── */
+@media (max-width: 500px) {
+  #category-nav { padding: 8px 10px; gap: 6px; }
+  .cat-btn { padding: 9px 12px; font-size: 11px; }
+  #app-header h1 { font-size: 18px; }
+  .modal-content { padding: 28px 22px; }
+}

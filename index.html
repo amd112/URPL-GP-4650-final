@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NYC Hitchhiker's Guide</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── INTRO MODAL ─────────────────────────────────────────── -->
+  <div id="intro-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-badge">DON'T PANIC</div>
+      <h2 id="modal-title">NYC Hitchhiker's Guide</h2>
+      <p class="modal-subtitle">
+        So you find yourself in New York City. Congratulations, or condolences —
+        it's hard to tell the difference. Here is everything you actually need to survive.
+      </p>
+      <ul class="modal-features">
+        <li>
+          <span class="feature-icon" style="background: var(--color-water);">💧</span>
+          <div><strong>Water</strong> — Drinking fountains for when the city has wrung you dry.</div>
+        </li>
+        <li>
+          <span class="feature-icon" style="background: var(--color-power);">⚡</span>
+          <div><strong>Power</strong> — LinkNYC kiosks &amp; libraries. Save your phone; it knows the way home.</div>
+        </li>
+        <li>
+          <span class="feature-icon" style="background: var(--color-relief);">🚽</span>
+          <div><strong>Relief</strong> — Public restrooms. Arguably the most important entry.</div>
+        </li>
+        <li>
+          <span class="feature-icon" style="background: var(--color-rest);">🌿</span>
+          <div><strong>Rest</strong> — Parks. Because even hitchhikers need to sit down.</div>
+        </li>
+      </ul>
+      <button id="close-intro" class="modal-cta">Begin Exploring</button>
+    </div>
+  </div>
+
+  <!-- ── HEADER ─────────────────────────────────────────────── -->
+  <header id="app-header">
+    <div class="header-eyebrow">MOSTLY HARMLESS</div>
+    <h1>NYC Hitchhiker's Guide</h1>
+  </header>
+
+  <!-- ── STATUS ─────────────────────────────────────────────── -->
+  <div id="status-bar" hidden>
+    <span class="status-dot"></span> Consulting the Guide…
+  </div>
+
+  <!-- ── MAP ───────────────────────────────────────────────── -->
+  <div id="map"></div>
+
+  <!-- ── CATEGORY NAV ───────────────────────────────────────── -->
+  <nav id="category-nav" aria-label="Map categories">
+    <button class="cat-btn" id="btn-water"   data-category="water"   aria-pressed="false">💧 Water</button>
+    <button class="cat-btn" id="btn-power"   data-category="power"   aria-pressed="false">⚡ Power</button>
+    <button class="cat-btn" id="btn-relief"  data-category="relief"  aria-pressed="false">🚽 Relief</button>
+    <button class="cat-btn" id="btn-rest"    data-category="rest"    aria-pressed="false">🌿 Rest</button>
+  </nav>
+
+  <script src="script.js"></script>
+</body>
+</html>
