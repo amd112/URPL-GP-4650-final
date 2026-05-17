@@ -199,7 +199,7 @@ html, body {
 .modal-badge {
   display: inline-block;
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: 20px;
   letter-spacing: 4px;
   text-transform: uppercase;
   color: var(--green);

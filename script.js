@@ -192,10 +192,11 @@ function bindPopup(id) {
 
     const address = props.address
                   || props.location
-                  || props.addr
+                  || props.addr 
                   || props.location_type
                   || props.street_address
                   || props.propertyna
+                  || props.restroom_type
                   || '—';
 
     // create the popup text
@@ -219,6 +220,7 @@ function bindCursorHover(id) {
   map.on('mouseleave', `${id}-layer`, () => { canvas.style.cursor = '';        });
 }
 
+
 // ── CATEGORY TOGGLE ───────────────────────────────────────
 
 async function toggleCategory(id) {
@@ -234,19 +236,35 @@ async function toggleCategory(id) {
     if (map.getLayer(`${id}-layer`)) {
       map.setLayoutProperty(`${id}-layer`, 'visibility', 'none');
     }
-
   } else {
-    activeCategories.add(id);
-    btn.classList.add('active');
-    btn.style.setProperty('--cat-color', CATEGORIES[id].color);
-    btn.setAttribute('aria-pressed', 'true');
+      // ── Turn on ──
+      activeCategories.add(id);
+      btn.classList.add('active');
+      btn.style.setProperty('--cat-color', CATEGORIES[id].color);
+      btn.setAttribute('aria-pressed', 'true');
 
-    if (map.getSource(id)) {
-      map.setLayoutProperty(`${id}-layer`, 'visibility', 'visible');
-    } else {
-      await loadCategoryLayer(id);
+      if (map.getSource(id)) {
+        // Source already loaded — just show it
+        map.setLayoutProperty(`${id}-layer`, 'visibility', 'visible');
+        
+        // 🌟 FORCE REST LAYER TO THE BOTTOM IF IT JUST TURNED BACK ON
+        if (id === 'rest') {
+          const pointLayers = ['water-layer', 'power-layer', 'relief-layer'];
+          const beforeId = pointLayers.find(layerId => map.getLayer(layerId));
+          if (beforeId) {
+            map.moveLayer('rest-layer', beforeId);
+          }
+        }
+      } else {
+        // First time — fetch and add
+        await loadCategoryLayer(id);
+      }
+
+      // 🌟 IF A POINT LAYER WAS JUST TURNED ON, MAKE SURE IT GOES ABOVE REST
+      if (id !== 'rest' && map.getLayer('rest-layer')) {
+        map.moveLayer(`${id}-layer`); // Moves this point layer to the very top
+      }
     }
-  }
 }
 
 // ── BUTTON WIRING ────────────────────────────────────────
