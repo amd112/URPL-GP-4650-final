@@ -33,10 +33,12 @@ const CATEGORIES = {
   },
 };
 
-// ── STATE ────────────────────────────────────────────────
+
+// ── TRACKING ─────────────────────────────────────────────
 
 /** Tracks which categories are currently toggled on. */
 const activeCategories = new Set();
+
 
 // ── MAP INIT ─────────────────────────────────────────────
 
@@ -51,6 +53,7 @@ const map = new mapboxgl.Map({
   bearing:    0,
   maxBounds:  NYC_BOUNDS,
 });
+
 
 // ── MODAL & CODES ────────────────────────────────────────
 
@@ -102,6 +105,9 @@ async function fetchMergedGeoJSON(paths) {
 /**
  * Adds a GeoJSON source + respective layer for the given category
  */
+/**
+ * Adds a GeoJSON source + respective layer for the given category
+ */
 async function loadCategoryLayer(id) {
   const category = CATEGORIES[id];
 
@@ -118,6 +124,10 @@ async function loadCategoryLayer(id) {
 
     // Handle structural differences between Polygon-based Parks (rest) and regular point coordinates
     if (id === 'rest') {
+      // 1. Look to see if any point layers are ALREADY on the map
+      const pointLayers = ['water-layer', 'power-layer', 'relief-layer'];
+      const beforeId = pointLayers.find(layerId => map.getLayer(layerId));
+
       map.addLayer({
         id:      `${id}-layer`,
         type:    'fill',
@@ -128,7 +138,8 @@ async function loadCategoryLayer(id) {
           'fill-opacity': 0.4,
           'fill-outline-color': category.color
         },
-      });
+      }, beforeId); // 2. Passing 'beforeId' forces the park polygons to render UNDER that layer
+      
     } else {
       map.addLayer({
         id:      `${id}-layer`,
@@ -166,6 +177,7 @@ function bindPopup(id) {
   map.on('click', `${id}-layer`, (e) => {
     const props = e.features[0].properties;
 
+    // pull the names from different datasources
     const name = props.name
                || props.facility_name
                || props.title
@@ -181,8 +193,12 @@ function bindPopup(id) {
     const address = props.address
                   || props.location
                   || props.addr
+                  || props.location_type
+                  || props.street_address
+                  || props.propertyna
                   || '—';
 
+    // create the popup text
     new mapboxgl.Popup({ offset: [0, -6], maxWidth: '280px' })
       .setLngLat(e.lngLat)
       .setHTML(`
