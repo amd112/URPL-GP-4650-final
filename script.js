@@ -52,13 +52,22 @@ const map = new mapboxgl.Map({
   maxBounds:  NYC_BOUNDS,
 });
 
-// ── MODAL ────────────────────────────────────────────────
+// ── MODAL & CODES ────────────────────────────────────────
 
 function initModal() {
   const modal  = document.getElementById('intro-modal');
   const button = document.getElementById('close-intro');
+  const mainCta = document.getElementById('main-cta');
+  const closeCtaBtn = document.getElementById('close-cta');
+
   button.addEventListener('click', () => {
     modal.style.display = 'none';
+    // Activate post-splash map prompt banner
+    mainCta.removeAttribute('hidden');
+  });
+
+  closeCtaBtn.addEventListener('click', () => {
+    mainCta.setAttribute('hidden', '');
   });
 }
 
@@ -71,17 +80,11 @@ function initGeolocation() {
     showUserHeading:   true,
   });
   map.addControl(geolocate, 'bottom-right');
-  // Trigger after a short delay so the map is fully settled
   setTimeout(() => geolocate.trigger(), 600);
 }
 
 // ── DATA LOADING ─────────────────────────────────────────
 
-/**
- * Fetches one or more GeoJSON files and merges their features.
- * NOTE: This requires the app to be served via HTTP (not file://).
- * Run: python3 -m http.server 8000   then open localhost:8000
- */
 async function fetchMergedGeoJSON(paths) {
   const responses = await Promise.all(
     paths.map(async (path) => {
@@ -97,77 +100,61 @@ async function fetchMergedGeoJSON(paths) {
 }
 
 /**
- * Returns a small set of sample points around Manhattan
- * so layers are visually testable before real data is wired up.
- */
-function makeDemoGeoJSON(id) {
-  const { color } = CATEGORIES[id];
-  // Scatter 12 points around central Manhattan
-  const base = [-73.9857, 40.7484];
-  const offsets = [
-    [0, 0], [0.01, 0.005], [-0.01, 0.007], [0.005, -0.01],
-    [-0.008, -0.005], [0.015, 0.012], [-0.015, 0.01],
-    [0.002, 0.018], [-0.002, -0.018], [0.02, -0.005],
-    [-0.02, 0.002], [0.012, -0.015],
-  ];
-  return {
-    type: 'FeatureCollection',
-    features: offsets.map(([dx, dy], i) => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [base[0] + dx, base[1] + dy] },
-      properties: {
-        name:    `${CATEGORIES[id].label} Location ${i + 1}`,
-        address: 'Sample data — add your GeoJSON files to /data/',
-      },
-    })),
-  };
-}
-
-/**
- * Adds a GeoJSON source + circle layer for the given category
- * and wires up click / hover interactions.
+ * Adds a GeoJSON source + respective layer for the given category
  */
 async function loadCategoryLayer(id) {
   const category = CATEGORIES[id];
-  setStatus(true);
 
   try {
     let geojson;
     try {
       geojson = await fetchMergedGeoJSON(category.sources);
     } catch (fetchErr) {
-      console.warn(`[Guide] Could not load real data for "${id}" — using demo points. Serve via HTTP to load real GeoJSON.`, fetchErr);
+      console.warn(`[Guide] Could not load real data for "${id}" — using demo points.`, fetchErr);
       geojson = makeDemoGeoJSON(id);
     }
 
     map.addSource(id, { type: 'geojson', data: geojson });
 
-    map.addLayer({
-      id:     `${id}-layer`,
-      type:   'circle',
-      source: id,
-      filter: ['==', ['geometry-type'], 'Point'],
-      paint: {
-        'circle-radius':  [
-          'interpolate', ['linear'], ['zoom'],
-          11, 4,
-          15, 8,
-        ],
-        'circle-color':   category.color,
-        'circle-opacity': 0.9,
-        'circle-blur':    0.6,
-        'circle-stroke-width': 1,
-        'circle-stroke-color': 'rgba(255,255,255,0.2)',
-      },
-    });
+    // Handle structural differences between Polygon-based Parks (rest) and regular point coordinates
+    if (id === 'rest') {
+      map.addLayer({
+        id:      `${id}-layer`,
+        type:    'fill',
+        source:  id,
+        filter:  ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
+        paint: {
+          'fill-color':   category.color,
+          'fill-opacity': 0.4,
+          'fill-outline-color': category.color
+        },
+      });
+    } else {
+      map.addLayer({
+        id:      `${id}-layer`,
+        type:    'circle',
+        source:  id,
+        filter:  ['==', ['geometry-type'], 'Point'],
+        paint: {
+          'circle-radius':  [
+            'interpolate', ['linear'], ['zoom'],
+            11, 4,
+            15, 8,
+          ],
+          'circle-color':   category.color,
+          'circle-opacity': 0.9,
+          'circle-blur':    0.6,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': 'rgba(255,255,255,0.2)',
+        },
+      });
+    }
 
     bindPopup(id);
     bindCursorHover(id);
 
   } catch (err) {
     console.error(`[Guide] Error loading "${id}":`, err);
-  } finally {
-    setStatus(false);
   }
 }
 
@@ -182,6 +169,13 @@ function bindPopup(id) {
     const name = props.name
                || props.facility_name
                || props.title
+               || props.decription
+               || props.planned_kiosk_type
+               || props.branch
+               || props.signname
+               || props.operator
+               || props.gardenname
+               || props.position
                || 'Unnamed Resource';
 
     const address = props.address
@@ -192,7 +186,7 @@ function bindPopup(id) {
     new mapboxgl.Popup({ offset: [0, -6], maxWidth: '280px' })
       .setLngLat(e.lngLat)
       .setHTML(`
-        <span class="popup-pill"
+        <span class="popup-pill" 
               style="background:${color}22; color:${color}; border:1px solid ${color}44;">
           ${CATEGORIES[id].label}
         </span>
@@ -216,7 +210,6 @@ async function toggleCategory(id) {
   const isActive = activeCategories.has(id);
 
   if (isActive) {
-    // ── Turn off ──
     activeCategories.delete(id);
     btn.classList.remove('active');
     btn.style.removeProperty('--cat-color');
@@ -227,17 +220,14 @@ async function toggleCategory(id) {
     }
 
   } else {
-    // ── Turn on ──
     activeCategories.add(id);
     btn.classList.add('active');
     btn.style.setProperty('--cat-color', CATEGORIES[id].color);
     btn.setAttribute('aria-pressed', 'true');
 
     if (map.getSource(id)) {
-      // Source already loaded — just show it
       map.setLayoutProperty(`${id}-layer`, 'visibility', 'visible');
     } else {
-      // First time — fetch and add
       await loadCategoryLayer(id);
     }
   }
@@ -254,14 +244,6 @@ function initButtons() {
   });
 }
 
-// ── STATUS INDICATOR ─────────────────────────────────────
-
-function setStatus(visible) {
-  const el = document.getElementById('status-bar');
-  if (visible) el.removeAttribute('hidden');
-  else         el.setAttribute('hidden', '');
-}
-
 // ── BOOT ─────────────────────────────────────────────────
 
 initModal();
@@ -269,6 +251,5 @@ initButtons();
 
 map.on('load', () => {
   initGeolocation();
-  // Open with Relief layer on by default
   toggleCategory('relief');
 });
